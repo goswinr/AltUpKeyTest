@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -10,6 +15,9 @@ using Rhino.Commands;
 using Rhino.Geometry;
 using Rhino.Input;
 using Rhino.Input.Custom;
+
+//https://stackoverflow.com/a/57710850/969070
+
 
 namespace AltUpTest
 {
@@ -64,17 +72,22 @@ namespace AltUpTest
             get { return "AltUpTestCommand"; }
         }
 
+
+
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
             Window win = new Window();
             win.Title = "Testing Alt + Up keys";
             TextBlock tb = new TextBlock();
+            ScrollViewer sc = new ScrollViewer();
+            sc.Content = tb;
+            win.Content = sc;            
+
             tb.Text = "To test:\r\nFirst press Ctrl + Up key\r\nThen press Alt + X key\r\nThen press Alt + Up key\r\n\r\n";
-            win.Content = tb;            
             
 
-            KeyGesture altUpGesture = new KeyGesture(Key.Up, ModifierKeys.Alt);
-            KeyGesture altXGesture = new KeyGesture(Key.X, ModifierKeys.Alt);
+            KeyGesture altUpGesture  = new KeyGesture(Key.Up, ModifierKeys.Alt);
+            KeyGesture altXGesture   = new KeyGesture(Key.X,  ModifierKeys.Alt);
             KeyGesture ctrlUpGesture = new KeyGesture(Key.Up, ModifierKeys.Control);
 
             ICommand altUpCmd =  new Cmd(x => tb.Text = tb.Text + "Alt + Up was pressed \r\n");
@@ -85,6 +98,24 @@ namespace AltUpTest
             win.InputBindings.Add(new InputBinding(altUpCmd,  altUpGesture));
             win.InputBindings.Add(new InputBinding(altXCmd,   altXGesture));
             win.InputBindings.Add(new InputBinding(crtlUpCmd, ctrlUpGesture));
+
+
+
+            win.PreviewKeyDown += new KeyEventHandler(delegate (object sender, KeyEventArgs a)
+                {
+                    tb.Text = tb.Text + "PreviewKeyDown: " + a.Key.ToString() + ", SystemKey:" + a.SystemKey.ToString() + "\r\n";
+                    a.Handled = true;
+                    sc.ScrollToEnd();
+                });
+
+            win.KeyDown += new KeyEventHandler(delegate (object sender, KeyEventArgs a)
+            {
+                tb.Text = tb.Text + "KeyDown: " + a.Key.ToString() + ", SystemKey:" + a.SystemKey.ToString() + "\r\n";
+                a.Handled = true;
+                sc.ScrollToEnd();
+            });
+
+
 
             win.Height = 600;
             win.Width = 400;
